@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Driven Bug Detection Tool</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: none;
+            color: #555;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-tab.active,
+        .nav-tab:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 2rem 2rem;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .code-analyzer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .code-input-section,
+        .results-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-textarea {
+            width: 100%;
+            height: 400px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .code-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .quality-score {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .bug-item {
+            background: white;
+            border-left: 4px solid #ff6b6b;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 10px 10px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .bug-item.medium {
+            border-left-color: #ffa726;
+        }
+
+        .bug-item.low {
+            border-left-color: #42a5f5;
+        }
+
+        .bug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .bug-type {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .severity-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .severity-high { background: #ff6b6b; }
+        .severity-medium { background: #ffa726; }
+        .severity-low { background: #42a5f5; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .card-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .bug-list {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .recommendations {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 1.5rem;
+            border-radius: 0 10px 10px 0;
+            margin-top: 1.5rem;
+        }
+
+        .recommendation-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #c8e6c9;
+        }
+
+        .recommendation-item:last-child {
+            border-bottom: none;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .training-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .code-sample {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+            overflow-x: auto;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .export-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+        }
+
+        .status-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .status-btn:hover {
+            background: #545b62;
+        }
+
+        @media (max-width: 768px) {
+            .code-analyzer {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .filter-bar {
+                flex-direction: column;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .main-container {
+                padding: 80px 1rem 1rem;
+            }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-info {
+            background: #cce7ff;
+            border: 1px solid #b3d9ff;
+            color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-bug"></i>
+                AI Bug Detector
+            </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('analyzer')">
+                    <i class="fas fa-search"></i> Analyzer
+                </button>
+                <button class="nav-tab" onclick="showTab('dashboard')">
+                    <i class="fas fa-chart-dashboard"></i> Dashboard
+                </button>
+                <button class="nav-tab" onclick="showTab('bugs')">
+                    <i class="fas fa-list"></i> Bug Tracker
+                </button>
+                <button class="nav-tab" onclick="showTab('training')">
+                    <i class="fas fa-brain"></i> ML Training
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <!-- Analyzer Tab -->
+        <div id="analyzer" class="tab-content active">
+            <div class="hero">
+                <h1>AI-Driven Bug Detection</h1>
+                <p>Enhance your software quality with intelligent code analysis powered by machine learning and pattern recognition.</p>
+            </div>
+
+            <div class="code-analyzer">
+                <div class="code-input-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-code"></i> Code Input
+                    </h2>
+                    <textarea id="codeInput" class="code-textarea" 
+                              placeholder="Paste your code here for analysis...&#10;&#10;Example:&#10;def process_data(data):&#10;    result = data.process()&#10;    return result.value"></textarea>
+                    <button id="analyzeBtn" class="analyze-btn" onclick="analyzeCode()">
+                        <i class="fas fa-search"></i> Analyze Code
+                    </button>
+                </div>
+
+                <div class="results-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-line"></i> Analysis Results
+                    </h2>
+                    <div id="resultsContainer" class="results-container">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Enter your code and click "Analyze Code" to get started with AI-powered bug detection.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content">
+            <div class="hero">
+                <h1>Analytics Dashboard</h1>
+                <p>Monitor your project's software quality metrics and bug detection trends.</p>
+            </div>
+
+            <div id="dashboardContent">
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <div class="card-number" id="totalBugs">0</div>
+                        <div class="card-label">Total Bugs</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="card-number" id="highSeverityBugs">0</div>
+                        <div class="card-label">High Severity</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="card-number" id="fixedBugs">0</div>
+                        <div class="card-label">Fixed Bugs</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="card-number" id="modelStatus">Not Trained</div>
+                        <div class="card-label">ML Model</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="section-title">
+                        <i class="fas fa-chart-bar"></i> Bug Detection Trends
+                    </h3>
+                    <canvas id="trendChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bug Tracker Tab -->
+        <div id="bugs" class="tab-content">
+            <div class="hero">
+                <h1>Bug Tracker</h1>
+                <p>Manage and track detected bugs throughout your development process.</p>
+            </div>
+
+            <div class="bug-list">
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportBugs('json')">
+                        <i class="fas fa-download"></i> Export JSON
+                    </button>
+                    <button class="export-btn" onclick="exportBugs('csv')">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
+
+                <div class="filter-bar">
+                    <select id="severityFilter" class="filter-select" onchange="filterBugs()">
+                        <option value="">All Severities</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <select id="typeFilter" class="filter-select" onchange="filterBugs()">
+                        <option value="">All Types</option>
+                        <option value="null_pointer">Null Pointer</option>
+                        <option value="memory_leak">Memory Leak</option>
+                        <option value="sql_injection">SQL Injection</option>
+                        <option value="security_vulnerability">Security</option>
+                        <option value="logic_error">Logic Error</option>
+                    </select>
+                    <select id="statusFilter" class="filter-select" onchange="filterBugs()">
+                        <option value="">All Status</option>
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="fixed">Fixed</option>
+                    </select>
+                </div>
+
+                <div id="bugsList">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        No bugs detected yet. Analyze some code to populate the bug tracker.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Tab -->
+        <div id="training" class="tab-content">
+            <div class="hero">
+                <h1>ML Model Training</h1>
+                <p>Train the machine learning model with your custom code samples for improved bug detection accuracy.</p>
+            </div>
+
+            <div class="training-section">
+                <h3 class="section-title">
+                    <i class="fas fa-graduation-cap"></i> Model Training
+                </h3>
+                <p>The system automatically trains with synthetic data, but you can provide custom training samples for better accuracy on your specific codebase.</p>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>Training Tips:</strong> Provide diverse code samples with clear labels (0 = clean code, 1 = buggy code) for optimal model performance.
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <h4>Current Model Status</h4>
+                    <div id="modelTrainingStatus" class="alert alert-info">
+                        Model is automatically trained with synthetic data patterns for common bug types.
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <h4>Supported Bug Detection Patterns</h4>
+                    <div class="features-grid">
+                        <div class="feature-item">
+                            <div class="feature-value">8</div>
+                            <div class="feature-label">Bug Categories</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-value">25+</div>
+                            <div class="feature-label">Detection Patterns</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-value">ML</div>
+                            <div class="feature-label">Anomaly Detection</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-value">Real-time</div>
+                            <div class="feature-label">Analysis</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Toast Container -->
+    <div id="alertContainer" style="position: fixed; top: 80px; right: 20px; z-index: 1001;"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        let currentBugs = [];
+        let chartInstance = null;
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load tab-specific data
+            if (tabName === 'dashboard') {
+                loadDashboard();
+            } else if (tabName === 'bugs') {
+                loadBugs();
+            }
+        }
+
+        // Alert System
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert_' + Date.now();
+            
+            const alertHTML = `
+                <div id="${alertId}" class="alert alert-${type}" style="margin-bottom: 1rem; animation: slideIn 0.3s ease;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                    <button onclick="closeAlert('${alertId}')" style="float: right; background: none; border: none; color: inherit; cursor: pointer; font-size: 1.2rem;">&times;</button>
+                </div>
+            `;
+            
+            alertContainer.innerHTML = alertHTML + alertContainer.innerHTML;
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => closeAlert(alertId), 5000);
+        }
+
+        function closeAlert(alertId) {
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                alert.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => alert.remove(), 300);
+            }
+        }
+
+        // Add slideIn and slideOut animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Code Analysis
+        async function analyzeCode() {
+            const code = document.getElementById('codeInput').value.trim();
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            if (!code) {
+                showAlert('Please enter some code to analyze.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<div class="loading"><div class="spinner"></div> Analyzing...</div>';
+            
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data.results);
+                    showAlert('Code analysis completed successfully!', 'success');
+                } else {
+                    showAlert(data.error || 'Analysis failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Network error: ' + error.message, 'error');
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analyze Code';
+            }
+        }
+
+        function displayResults(results) {
+            const container = document.getElementById('resultsContainer');
+            const { pattern_bugs, ml_prediction, features, quality_score, recommendations } = results;
+            
+            let html = '';
+            
+            // Quality Score
+            html += `
+                <div class="quality-score">
+                    <div class="score-circle">
+                        <span>${quality_score.overall}</span>
+                    </div>
+                    <h3>Code Quality Grade: ${quality_score.grade}</h3>
+                    <p>Overall Quality Score: ${quality_score.overall}/100</p>
+                </div>
+            `;
+            
+            // ML Prediction
+            html += `
+                <div class="bug-item ${ml_prediction.bug_probability > 0.7 ? 'high' : ml_prediction.bug_probability > 0.4 ? 'medium' : 'low'}">
+                    <div class="bug-header">
+                        <span class="bug-type">ML Analysis</span>
+                        <span class="severity-badge severity-${ml_prediction.bug_probability > 0.7 ? 'high' : ml_prediction.bug_probability > 0.4 ? 'medium' : 'low'}">
+                            ${Math.round(ml_prediction.bug_probability * 100)}% Bug Risk
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Anomaly Detection:</strong> ${ml_prediction.is_anomaly ? 'Unusual code pattern detected' : 'Normal code pattern'}
+                    </div>
+                </div>
+            `;
+            
+            // Pattern Bugs
+            if (pattern_bugs.length > 0) {
+                pattern_bugs.forEach(bug => {
+                    html += `
+                        <div class="bug-item ${bug.severity}">
+                            <div class="bug-header">
+                                <span class="bug-type">${bug.type.replace(/_/g, ' ')}</span>
+                                <span class="severity-badge severity-${bug.severity}">${bug.severity.toUpperCase()}</span>
+                            </div>
+                            <div><strong>Line ${bug.line}:</strong> ${bug.message}</div>
+                            <div class="code-sample">${escapeHtml(bug.code)}</div>
+                            <div><strong>Confidence:</strong> ${Math.round(bug.confidence * 100)}%</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Code Features
+            html += `
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <div class="feature-value">${features.lines_of_code}</div>
+                        <div class="feature-label">Lines of Code</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-value">${features.functions}</div>
+                        <div class="feature-label">Functions</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-value">${features.complexity_score}</div>
+                        <div class="feature-label">Complexity Score</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-value">${features.nesting_depth}</div>
+                        <div class="feature-label">Max Nesting</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-value">${Math.round(features.comment_ratio * 100)}%</div>
+                        <div class="feature-label">Comment Ratio</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-value">${features.try_except}</div>
+                        <div class="feature-label">Error Handling</div>
+                    </div>
+                </div>
+            `;
+            
+            // Recommendations
+            if (recommendations.length > 0) {
+                html += `
+                    <div class="recommendations">
+                        <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
+                `;
+                recommendations.forEach(rec => {
+                    html += `<div class="recommendation-item">${rec}</div>`;
+                });
+                html += `</div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Dashboard Functions
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateDashboardCards(data.dashboard.statistics);
+                    updateTrendChart(data.dashboard.trend_data);
+                    document.getElementById('modelStatus').textContent = 
+                        data.dashboard.model_status === 'trained' ? 'Trained' : 'Auto-Trained';
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showAlert('Failed to load dashboard data', 'error');
+            }
+        }
+
+        function updateDashboardCards(stats) {
+            document.getElementById('totalBugs').textContent = stats.total || 0;
+            document.getElementById('highSeverityBugs').textContent = stats.by_severity?.high || 0;
+            document.getElementById('fixedBugs').textContent = stats.by_status?.fixed || 0;
+        }
+
+        function updateTrendChart(trendData) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            
+            // Destroy existing chart
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trendData.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'Bugs Found',
+                            data: trendData.map(d => d.bugs_found),
+                            borderColor: '#ff6b6b',
+                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Bugs Fixed',
+                            data: trendData.map(d => d.bugs_fixed),
+                            borderColor: '#4caf50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Bug Tracker Functions
+        async function loadBugs() {
+            try {
+                const response = await fetch('/api/bugs');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentBugs = data.bugs;
+                    displayBugs(currentBugs);
+                }
+            } catch (error) {
+                console.error('Error loading bugs:', error);
+                showAlert('Failed to load bugs data', 'error');
+            }
+        }
+
+        function displayBugs(bugs) {
+            const container = document.getElementById('bugsList');
+            
+            if (bugs.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        No bugs found with current filters.
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            bugs.forEach(bug => {
+                html += `
+                    <div class="bug-item ${bug.severity}">
+                        <div class="bug-header">
+                            <span class="bug-type">#${bug.id} - ${bug.type.replace(/_/g, ' ')}</span>
+                            <div>
+                                <span class="severity-badge severity-${bug.severity}">${bug.severity.toUpperCase()}</span>
+                                <button class="status-btn" onclick="updateBugStatus(${bug.id}, '${bug.status === 'open' ? 'fixed' : 'open'}')">
+                                    ${bug.status === 'open' ? 'Mark Fixed' : 'Reopen'}
+                                </button>
+                            </div>
+                        </div>
+                        <div><strong>Line ${bug.line}:</strong> ${bug.message}</div>
+                        ${bug.code ? `<div class="code-sample">${escapeHtml(bug.code)}</div>` : ''}
+                        <div style="margin-top: 0.5rem;">
+                            <small><strong>Status:</strong> ${bug.status} | <strong>Detected:</strong> ${new Date(bug.timestamp).toLocaleString()}</small>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function filterBugs() {
+            const severityFilter = document.getElementById('severityFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            let filteredBugs = currentBugs.filter(bug => {
+                return (!severityFilter || bug.severity === severityFilter) &&
+                       (!typeFilter || bug.type === typeFilter) &&
+                       (!statusFilter || bug.status === statusFilter);
+            });
+            
+            displayBugs(filteredBugs);
+        }
+
+        async function updateBugStatus(bugId, newStatus) {
+            try {
+                const response = await fetch(`/api/bugs/${bugId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadBugs(); // Reload bugs
+                    showAlert('Bug status updated successfully!', 'success');
+                } else {
+                    showAlert(data.error || 'Failed to update bug status', 'error');
+                }
+            } catch (error) {
+                showAlert('Network error: ' + error.message, 'error');
+            }
+        }
+
+        // Export Functions
+        async function exportBugs(format) {
+            try {
+                const response = await fetch(`/api/export?format=${format}`);
+                
+                if (format === 'csv') {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'bugs.csv';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    showAlert('CSV export completed successfully!', 'success');
+                } else {
+                    const data = await response.json();
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'bugs.json';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    showAlert('JSON export completed successfully!', 'success');
+                }
+            } catch (error) {
+                showAlert('Export failed: ' + error.message, 'error');
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter to analyze code
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                const analyzeBtn = document.getElementById('analyzeBtn');
+                if (!analyzeBtn.disabled) {
+                    analyzeCode();
+                }
+                e.preventDefault();
+            }
+        });
+
+        // Auto-save code input to localStorage (if available)
+        function saveCodeInput() {
+            const code = document.getElementById('codeInput').value;
+            try {
+                if (typeof(Storage) !== "undefined") {
+                    localStorage.setItem('bugDetectorCode', code);
+                }
+            } catch (e) {
+                // localStorage not available or quota exceeded
+                console.log('Could not save code to localStorage');
+            }
+        }
+
+        function loadCodeInput() {
+            try {
+                if (typeof(Storage) !== "undefined") {
+                    const savedCode = localStorage.getItem('bugDetectorCode');
+                    if (savedCode) {
+                        document.getElementById('codeInput').value = savedCode;
+                    }
+                }
+            } catch (e) {
+                console.log('Could not load code from localStorage');
+            }
+        }
+
+        // Auto-save code input on change
+        document.getElementById('codeInput').addEventListener('input', debounce(saveCodeInput, 1000));
+
+        // Debounce utility function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCodeInput();
+            
+            // Add sample code examples
+            const sampleCodes = [
+                {
+                    name: "Null Pointer Example",
+                    code: `def process_user_data(user):
+    # Potential null pointer bug
+    return user.profile.name.upper()
+
+def get_user_email(user_id):
+    user = find_user(user_id)
+    return user.email  # user might be None`
+                },
+                {
+                    name: "SQL Injection Example", 
+                    code: `def login_user(username, password):
+    # SQL injection vulnerability
+    query = "SELECT * FROM users WHERE username='" + username + "' AND password='" + password + "'"
+    return execute_query(query)
+
+def search_products(term):
+    query = f"SELECT * FROM products WHERE name LIKE '%{term}%'"
+    return database.execute(query)`
+                },
+                {
+                    name: "Memory Leak Example",
+                    code: `def allocate_memory():
+    # Memory leak - malloc without free
+    ptr = malloc(1024)
+    if some_condition():
+        return ptr
+    # Missing free(ptr) in some paths
+    
+def create_objects():
+    objects = []
+    while True:
+        obj = create_large_object()
+        objects.append(obj)
+        # Never cleanup objects`
+                },
+                {
+                    name: "Clean Code Example",
+                    code: `def safe_user_processor(user):
+    """Safely process user data with proper null checks."""
+    if user is None:
+        return None
+    
+    profile = getattr(user, 'profile', None)
+    if profile is None:
+        return None
+        
+    name = getattr(profile, 'name', '')
+    return name.upper() if name else ''
+
+def secure_login(username, password):
+    """Secure login using parameterized queries."""
+    query = "SELECT * FROM users WHERE username=%s AND password=%s"
+    return execute_query(query, (username, hash_password(password)))`
+                }
+            ];
+
+            // Add sample code buttons
+            const codeInputSection = document.querySelector('.code-input-section');
+            const sampleButtonsDiv = document.createElement('div');
+            sampleButtonsDiv.style.marginTop = '1rem';
+            sampleButtonsDiv.innerHTML = '<h4 style="margin-bottom: 0.5rem;">Sample Code Examples:</h4>';
+            
+            sampleCodes.forEach(sample => {
+                const button = document.createElement('button');
+                button.textContent = sample.name;
+                button.className = 'sample-btn';
+                button.style.cssText = `
+                    margin: 0.25rem 0.5rem 0.25rem 0;
+                    padding: 0.5rem 1rem;
+                    background: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 0.9rem;
+                    transition: background-color 0.2s;
+                `;
+                button.addEventListener('click', () => {
+                    document.getElementById('codeInput').value = sample.code;
+                    saveCodeInput();
+                });
+                button.addEventListener('mouseover', () => {
+                    button.style.backgroundColor = '#e9ecef';
+                });
+                button.addEventListener('mouseout', () => {
+                    button.style.backgroundColor = '#f8f9fa';
+                });
+                sampleButtonsDiv.appendChild(button);
+            });
+            
+            codeInputSection.appendChild(sampleButtonsDiv);
+        });
+
+    </script>
+</body>
+</html>
